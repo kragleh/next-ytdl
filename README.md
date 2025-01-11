@@ -9,7 +9,13 @@ The YouTube Downloader built with Next.js and yt-dlp for personal use. Aiming fo
 ## TODO
 - [x] Credential authentication
 - [ ] More formats
-- [ ] Implement quality
+- [x] Implement quality
+- [ ] Refine quality options
 - [ ] Settings (url filter, download limit...)
 - [ ] Download history
 - [ ] Live download status
+
+## Dependencies
+- yt-dlp
+- ffmpeg
+- NodeJS

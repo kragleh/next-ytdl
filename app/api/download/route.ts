@@ -1,44 +1,84 @@
 import { auth } from "@/auth"
-import { exec } from "child_process"
+import { downloadSchema } from "@/lib/zod"
+import path from "path"
 import process from "process"
+import YTDlpWrap from 'yt-dlp-wrap'
 
 export async function POST(request: Request) {
   const session = await auth()
   if (!session) return new Response(JSON.stringify({ message: "Not authenticated" }), { status: 401 })
 
-  
-
   const body = await request.json()
-  const url = body.url
-  const format = body.format
-  const quality = body.quality
+  const { url, format, quality } = await downloadSchema.parseAsync(body)
 
-  const cmd: string = `yt-dlp -o ${process.cwd()}\\public\\downloads\\output.mp4 ${url}`
+  const ytDlpWrap = new YTDlpWrap()
 
-  const executed = exec(cmd)
+  let args = []
 
-  executed.stdout?.on("data", (data) => {
-    console.log(`stdout: ${data}`)
-
-    const match = data.match(/\[download\]\s+(\d+\.\d+)%/)
-    if (match) {
-      const progress = parseFloat(match[1])
-      console.log('downloading: ', progress, ' id: ' + url)
-      //db.set(downloadId, { status: "downloading", progress })
+  if (format === 'mp3') {
+    let bitrate = '320K'
+    if (quality !== 'best') {
+      if (quality === '320kbps') {
+        bitrate = '320K'
+      } else if (quality === '192kbps') {
+        bitrate = '192K'
+      } else if (quality === '128kbps') {
+        bitrate = '128K'
+      }
     }
-  })
 
-  executed.stderr?.on("data", (data) => {
-    console.error(`stderr: ${data}`, ' id: ' + url)
-  })
-
-  executed.on("close", (code) => {
-    if (code === 0) {
-      console.log('downloading: ', 100, ' id: ' + url)
-    } else {
-      console.log('error: ', 0, ' id: ' + url)
+    args = [
+      '--extract-audio',
+      '--audio-format',
+      'mp3',
+      '--audio-quality',
+      bitrate,
+      '-o',
+      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + quality + "_.%(ext)s"}`,
+      '--restrict-filenames',
+      url,
+    ]
+  } else {
+    let res = '2160'
+    if (quality !== 'best') {
+      if (quality === '2160p') {
+        res = '2160'
+      } else if (quality === '1440p') {
+        res = '1440'
+      } else if (quality === '1080p') {
+        res = '1080'
+      } else if (quality === '720p') {
+        res = '720'
+      } else if (quality === '480p') {
+        res = '480'
+      }
     }
-  })
+
+    args = [
+      '-f',
+      `bestvideo[height<=${res}]+bestaudio`,
+      '--merge-output-format',
+      'mp4',
+      '-o',
+      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + res + "p_.%(ext)s"}`,
+      '--restrict-filenames',
+      url,
+    ]
+  }
+
+  const eventEmitter = ytDlpWrap.exec(args).on('progress', (progress) =>
+    console.log(
+        progress.percent,
+        progress.totalSize,
+        progress.currentSpeed,
+        progress.eta
+    )
+  )
+  .on('ytDlpEvent', (eventType, eventData) =>
+      console.log(eventType, eventData)
+  )
+  .on('error', (error) => console.error(error))
+  .on('close', () => console.log('all done'))
 
   return Response.json({ id: 'test' })
 }

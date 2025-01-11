@@ -6,6 +6,7 @@ import { ThemeToggle } from '@/components/misc/ThemeToggle'
 import DownloadForm from '@/components/form/download/DownloadForm'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import SignOutDropdownItem from '@/components/auth/SignOutDropdownItem'
+import DownloadHistory from '@/components/downloads/DownloadHistory'
 
 const HomePage = async () => {
   const session = await auth()
@@ -28,6 +29,8 @@ const HomePage = async () => {
       </Header>
 
       <DownloadForm />
+
+      <DownloadHistory />
 
       <div className='absolute bottom-4 left-4 z-10'>
         <ThemeToggle />

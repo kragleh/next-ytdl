@@ -7,10 +7,12 @@ import DownloadForm from '@/components/form/download/DownloadForm'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import SignOutDropdownItem from '@/components/auth/SignOutDropdownItem'
 import DownloadHistory from '@/components/downloads/DownloadHistory'
+import Footer from '@/components/misc/Footer'
+import DownloadQueue from '@/components/downloads/DownloadQueue'
 
 const HomePage = async () => {
   const session = await auth()
-  if (!session) redirect('/auth/signin')
+  if (!session || !session.user || !session.user.id) redirect('/auth/signin')
 
   const user = session.user
 
@@ -30,9 +32,13 @@ const HomePage = async () => {
 
       <DownloadForm />
 
-      <DownloadHistory />
+      <DownloadQueue userId={session.user.id} />
 
-      <div className='absolute bottom-4 left-4 z-10'>
+      <DownloadHistory userId={session.user.id} />
+
+      <Footer />
+
+      <div className='fixed bottom-4 left-4 z-10'>
         <ThemeToggle />
       </div>
     </>

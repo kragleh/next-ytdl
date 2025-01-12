@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { downloadSchema } from "@/lib/zod"
+import { prisma } from "@/prisma"
 import path from "path"
 import process from "process"
 import YTDlpWrap from 'yt-dlp-wrap'
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       '--audio-quality',
       bitrate,
       '-o',
-      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + quality + "_.%(ext)s"}`,
+      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + quality + ".%(ext)s"}`,
       '--restrict-filenames',
       url,
     ]
@@ -60,21 +61,26 @@ export async function POST(request: Request) {
       '--merge-output-format',
       'mp4',
       '-o',
-      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + res + "p_.%(ext)s"}`,
+      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + res + "p.%(ext)s"}`,
       '--restrict-filenames',
       url,
     ]
   }
 
-  const eventEmitter = ytDlpWrap.exec(args).on('progress', (progress) =>
+  // const queueId = await prisma.downloadQueue.create({
+  //   data: {
+  //     file: url,
+  //   }
+  // })
+
+  const eventEmitter = ytDlpWrap.exec(args).on('progress', (progress) => {
     console.log(
         progress.percent,
         progress.totalSize,
         progress.currentSpeed,
         progress.eta
     )
-  )
-  .on('ytDlpEvent', (eventType, eventData) =>
+  }).on('ytDlpEvent', (eventType, eventData) =>
       console.log(eventType, eventData)
   )
   .on('error', (error) => console.error(error))

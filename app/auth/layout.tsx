@@ -17,7 +17,7 @@ const SignInLayout = async ({ children }: { children: React.ReactNode }) => {
       <div className="w-full max-w-sm">
         { children }
       </div>
-      <div className='absolute bottom-4 left-4 z-10'>
+      <div className='fixed bottom-4 left-4 z-10'>
         <ThemeToggle />
       </div>
     </main>

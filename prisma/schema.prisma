@@ -64,3 +64,9 @@ model VerificationToken {
 
 // Application models
 
+model DownloadQueue {
+  id        String   @id @default(cuid())
+  file      String
+  
+  createdAt DateTime @default(now())
+}

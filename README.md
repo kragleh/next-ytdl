@@ -4,7 +4,9 @@
   Next YouTube Downloader
 </h1>
 
-The YouTube Downloader built with Next.js and yt-dlp for personal use. Aiming for a clean and straightforward user experience without compromising performance. 
+The YouTube Downloader built with Next.js and yt-dlp for personal use. 
+Aiming for a clean and straightforward user experience without compromising performance. 
+Supported websites can be found [here](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
 ## TODO
 - [x] Credential authentication

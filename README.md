@@ -12,6 +12,7 @@ Supported websites can be found [here](https://github.com/yt-dlp/yt-dlp/blob/mas
 - [x] Credential authentication
 - [ ] More formats
 - [x] Implement quality
+- [ ] Stop queue entry
 - [ ] Refine quality options
 - [ ] Settings (url filter, download limit...)
 - [ ] Download history

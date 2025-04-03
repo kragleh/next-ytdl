@@ -3,88 +3,105 @@ import { downloadSchema } from "@/lib/zod"
 import { prisma } from "@/prisma"
 import path from "path"
 import process from "process"
-import YTDlpWrap from 'yt-dlp-wrap'
+import YTDlpWrap from "yt-dlp-wrap"
 
 export async function POST(request: Request) {
   const session = await auth()
   if (!session) return new Response(JSON.stringify({ message: "Not authenticated" }), { status: 401 })
 
-  const body = await request.json()
-  const { url, format, quality } = await downloadSchema.parseAsync(body)
+  try {
+    const body = await request.json()
+    const { url, format, quality } = await downloadSchema.parseAsync(body)
+    const ytDlpWrap = new YTDlpWrap()
 
-  const ytDlpWrap = new YTDlpWrap()
+    let args = []
+    let fileName = ''
 
-  let args = []
+    if (format === 'mp3') {
+      args = [
+        '--extract-audio',
+        '--audio-format',
+        'mp3',
+        '--audio-quality',
+        quality,
+        '-o',
+        `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + quality + ".%(ext)s"}`,
+        '--restrict-filenames',
+        url,
+      ]
 
-  if (format === 'mp3') {
-    let bitrate = '320K'
-    if (quality !== 'best') {
-      if (quality === '320kbps') {
-        bitrate = '320K'
-      } else if (quality === '192kbps') {
-        bitrate = '192K'
-      } else if (quality === '128kbps') {
-        bitrate = '128K'
+      try {
+        const printArgs = ["--print", "%(title)s_" + quality + ".%(ext)s", url]
+        const output = await ytDlpWrap.execPromise(printArgs)
+        fileName = output.trim()
+      } catch (error) {
+        console.error("Error fetching filename:", error)
+        return new Response(JSON.stringify({ message: "Failed to fetch filename" }), { status: 500 })
+      }
+    } else {
+      args = [
+        '-f',
+        `bestvideo[height<=${quality}]+bestaudio`,
+        '--merge-output-format',
+        'mp4',
+        '-o',
+        `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + quality + "p.%(ext)s"}`,
+        '--restrict-filenames',
+        url,
+      ]
+
+      try {
+        const printArgs = ["--print", "%(title)s_" + quality + "p.%(ext)s", url]
+        const output = await ytDlpWrap.execPromise(printArgs)
+        fileName = output.trim()
+      } catch (error) {
+        console.error("Error fetching filename:", error)
+        return new Response(JSON.stringify({ message: "Failed to fetch filename" }), { status: 500 })
       }
     }
 
-    args = [
-      '--extract-audio',
-      '--audio-format',
-      'mp3',
-      '--audio-quality',
-      bitrate,
-      '-o',
-      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + quality + ".%(ext)s"}`,
-      '--restrict-filenames',
-      url,
-    ]
-  } else {
-    let res = '2160'
-    if (quality !== 'best') {
-      if (quality === '2160p') {
-        res = '2160'
-      } else if (quality === '1440p') {
-        res = '1440'
-      } else if (quality === '1080p') {
-        res = '1080'
-      } else if (quality === '720p') {
-        res = '720'
-      } else if (quality === '480p') {
-        res = '480'
+    if (!fileName) return new Response(JSON.stringify({ message: "Failed to fetch filename" }), { status: 500 })
+    if (!session.user || !session.user.id) return new Response(JSON.stringify({ message: "Not authenticated" }), { status: 401 })
+
+    if (fileName.includes('.webm')) {
+      const count = fileName.split('.webm').length - 1
+      if (count !== 1) { 
+        fileName = `Playlist of ${count} videos`
       }
     }
 
-    args = [
-      '-f',
-      `bestvideo[height<=${res}]+bestaudio`,
-      '--merge-output-format',
-      'mp4',
-      '-o',
-      `${process.cwd()}${path.sep}public${path.sep}downloads${path.sep}${session.user?.id}${path.sep}${"%(title)s_" + res + "p.%(ext)s"}`,
-      '--restrict-filenames',
-      url,
-    ]
+    const download = await prisma.downloadQueue.create({
+      data: {
+        file: fileName,
+        userId: session.user.id,
+        status: 'in-progress',
+      },
+    })
+
+    ytDlpWrap.exec(args).on('progress', async (progress) => {
+      await prisma.downloadQueue.update({
+        where: { id: download.id },
+        data: { progress: progress.percent, status: 'in-progress' },
+      })
+    }).on('ytDlpEvent', (eventType, eventData) =>
+      console.log('YT Event:', eventType, eventData)
+    ).on('error', async (error) => {
+      console.error(error)
+      await prisma.downloadQueue.update({
+        where: { id: download.id },
+        data: { status: 'error' },
+      })
+    }).on('close', async () => {
+      console.log('Download done')
+      await prisma.downloadQueue.delete({
+        where: { id: download.id },
+      })
+    })
+
+    return Response.json({ status: 'in-progress' })
+  } catch (error) {
+    console.error(error)
+    return new Response(JSON.stringify({ message: "Something went wrong" }), { status: 500 })
   }
-
-  // const queueId = await prisma.downloadQueue.create({
-  //   data: {
-  //     file: url,
-  //   }
-  // })
-
-  const eventEmitter = ytDlpWrap.exec(args).on('progress', (progress) => {
-    console.log(
-        progress.percent,
-        progress.totalSize,
-        progress.currentSpeed,
-        progress.eta
-    )
-  }).on('ytDlpEvent', (eventType, eventData) =>
-      console.log(eventType, eventData)
-  )
-  .on('error', (error) => console.error(error))
-  .on('close', () => console.log('all done'))
-
-  return Response.json({ id: 'test' })
+  
 }

@@ -21,6 +21,8 @@ model User {
  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  downloadQueue DownloadQueue[]
 }
  
 model Account {
@@ -65,8 +67,13 @@ model VerificationToken {
 // Application models
 
 model DownloadQueue {
-  id        String   @id @default(cuid())
-  file      String
-  
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  file       String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress   Float    @default(0)
+  status     String   @default("pending") // "pending", "in-progress", "completed", "error"
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt 
 }

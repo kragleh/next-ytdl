@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import Header from '@/components/nav/Header'
 import { ThemeToggle } from '@/components/misc/ThemeToggle'
 import DownloadForm from '@/components/form/download/DownloadForm'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import SignOutDropdownItem from '@/components/auth/SignOutDropdownItem'
 import DownloadHistory from '@/components/downloads/DownloadHistory'
 import Footer from '@/components/misc/Footer'
@@ -32,7 +32,7 @@ const HomePage = async () => {
 
       <DownloadForm />
 
-      <DownloadQueue userId={session.user.id} />
+      <DownloadQueue />
 
       <DownloadHistory userId={session.user.id} />
 

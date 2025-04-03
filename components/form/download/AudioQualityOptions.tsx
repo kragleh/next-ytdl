@@ -3,15 +3,14 @@ import React from 'react'
 
 const AudioQualityOptions = ({ setQuality }: { setQuality: (quality: string) => void }) => {
   return (
-    <Select onValueChange={ setQuality } defaultValue='best'>
+    <Select onValueChange={ setQuality } defaultValue='320K'>
       <SelectTrigger>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="best">Best</SelectItem>
-        <SelectItem value="320kbps">320kbps (High)</SelectItem>
-        <SelectItem value="192kbps">192kbps (Medium)</SelectItem>
-        <SelectItem value="128kbps">128kbps (Low)</SelectItem>
+        <SelectItem value="320K">320kbps (High)</SelectItem>
+        <SelectItem value="192K">192kbps (Medium)</SelectItem>
+        <SelectItem value="128K">128kbps (Low)</SelectItem>
       </SelectContent>
     </Select>
   )
